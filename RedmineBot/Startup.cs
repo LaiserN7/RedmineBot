@@ -23,10 +23,11 @@ namespace RedmineBot
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSingleton<IBotClient, BotClient>();
-            //services.AddScoped(typeof(IRedmineService<>), typeof(RedmineService<>));
+            services.AddScoped<IRedmineService, RedmineService>();
             services.AddScoped<IUpdateService, UpdateService>();
             services.Configure<BotConfiguration>(Configuration.GetSection(nameof(BotConfiguration)));
             services.Configure<RedmineConfiguration>(Configuration.GetSection(nameof(RedmineConfiguration)));
+            services.Configure<DomainConfiguration>(Configuration.GetSection(nameof(DomainConfiguration)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
