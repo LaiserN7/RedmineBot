@@ -168,7 +168,7 @@ namespace RedmineBot.Services
                 subject = m.Groups["subject"].Value;
             }
 
-            if (0.0f <= hours && hours > 168.0f)
+            if (0.0f <= hours || hours > 168.0f)
                 throw new ApplicationException("Wrong time format must be between 0 and 168");
 
             if (string.IsNullOrEmpty(subject))
