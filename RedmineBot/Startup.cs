@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using RedmineBot.Helpers;
+using RedmineBot.Middleware;
+using RedmineBot.Services;
 
 namespace RedmineBot
 {
@@ -26,6 +22,11 @@ namespace RedmineBot
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.AddSingleton<IBotClient, BotClient>();
+            //services.AddScoped(typeof(IRedmineService<>), typeof(RedmineService<>));
+            services.AddScoped<IUpdateService, UpdateService>();
+            services.Configure<BotConfiguration>(Configuration.GetSection(nameof(BotConfiguration)));
+            services.Configure<RedmineConfiguration>(Configuration.GetSection(nameof(RedmineConfiguration)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -38,6 +39,7 @@ namespace RedmineBot
             else
             {
                 app.UseHsts();
+                app.UseExceptionMiddleware();
             }
 
             app.UseHttpsRedirection();
