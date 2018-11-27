@@ -19,18 +19,17 @@ namespace RedmineBot.Services
                 "`/help` - watch helper info\n" +
                 "`ping` - if bot alive return pong" +
                 "`/chatId` - watch id of current chat\n" +
-                //"`/menu` - return menu\n" +
                 "`/rnd` - create random task\n" +
                 "`/spend <hours?> <subject?>` - create task with name (if have subject + hours),\n" +
                 "spend hours to any ure task (if no, create it)\n";
-
-                //"/inline   - send inline keyboard\n" +
-                //"/keyboard - send custom keyboard\n" +
-                //"/request  - request location or contact\n" + 
-                //"/hello - send a hello text\n" + 
-                //"/ver - watch a version of bot\n" +
-                //"/config - watch a type of config\n" +
-                //"/repeat - enable/disable repeat message\n";
+            //"`/menu` - return menu\n" +
+            //"/inline   - send inline keyboard\n" +
+            //"/keyboard - send custom keyboard\n" +
+            //"/request  - request location or contact\n" + 
+            //"/hello - send a hello text\n" + 
+            //"/ver - watch a version of bot\n" +
+            //"/config - watch a type of config\n" +
+            //"/repeat - enable/disable repeat message\n";
 
             return _client.Client.SendTextMessageAsync(chatId, text);
         }
