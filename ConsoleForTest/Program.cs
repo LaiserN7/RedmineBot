@@ -20,8 +20,8 @@ namespace ConsoleForTest
     {
         private static readonly HttpToSocks5Proxy Proxy = new HttpToSocks5Proxy("31.13.224.12", 9999);
         private const string BotToken = "631170979:AAFsyz1LJ17GeDGJ6MfSaEl6P0PJKfO81q0";
-        private const string RedmineApiKey = "c52fce8bc7508b51915f3a0b928d3f506ced9a65";//наиль
-        //private const string RedmineApiKey = "e502c3df9e31fb3a4b5b0b522d609a1bb444fa2e";//рустик
+        // private const string RedmineApiKey = "c52fce8bc7508b51915f3a0b928d3f506ced9a65";//наиль
+        private const string RedmineApiKey = "e502c3df9e31fb3a4b5b0b522d609a1bb444fa2e";//рустик
         private const string RedmineHost = "https://rd.d-l-s.ru/";
 
         //private const string login = "nshakirov";
@@ -64,7 +64,7 @@ namespace ConsoleForTest
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var text = "/spend -3";
+            var text = "/spend";
             (float hours, string subject) = GetTimeAndSubject(text);
 
             var user = await manager.GetCurrentUserAsync();
@@ -94,7 +94,7 @@ namespace ConsoleForTest
                     var e = d < 0.0f;
                     if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-                    //await manager.Create(Generator.GenerateTimeEntry(issue.Id));
+                    await manager.CreateObjectAsync(Generator.GenerateTimeEntry(issue.Id));
                     return;
                 }
                 Console.WriteLine("lol");

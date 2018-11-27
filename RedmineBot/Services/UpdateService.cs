@@ -124,7 +124,7 @@ namespace RedmineBot.Services
                     var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
                     if ( issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f ) continue;
 
-                    await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id));
+                    await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id, userId: user.Id, projectId: issue.Project.Id));
                     await _botService.SendText(_chatId, $"success spend to last task \n{stopWatch.ElapsedMilliseconds} ms");
                     return;
                 }
@@ -140,7 +140,7 @@ namespace RedmineBot.Services
             newIssue.UpdatedOn = DateTime.Now;
             await _redmineService.Update(newIssue.Id.ToString(), newIssue);
 
-            await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id));
+            await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, userId: user.Id));
 
             await _botService.SendText(_chatId, $"success spend \n{stopWatch.ElapsedMilliseconds} ms");
         }
