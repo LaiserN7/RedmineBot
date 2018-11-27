@@ -88,7 +88,7 @@ namespace ConsoleForTest
                     //await manager.Create(Generator.GenerateTimeEntry(issue.Id));
                     return;
                 }
-
+                Console.WriteLine("lol");
             }
 
             hours = hours <= 40.0f ? 40.0f : hours;

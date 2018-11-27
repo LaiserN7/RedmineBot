@@ -123,17 +123,18 @@ namespace RedmineBot.Services
                     if ( issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f ) continue;
 
                     await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id));
+                    await _botService.SendText(_chatId, $"success spend to last task \n {stopWatch.ElapsedMilliseconds} ms");
                     return;
                 }
                
             }
-
-            hours = hours <= 40.0f ? 40.0f : hours; 
+         
+            hours = hours <= 40.0f ? 40.0f : hours;
 
             var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: hours, subject: subject));
 
             //need to update all status to OnWork????
-            newIssue.Status = new IdentifiableName { Id = (int) IssueStatus.InWork };
+            newIssue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
             newIssue.UpdatedOn = DateTime.Now;
             await _redmineService.Update(newIssue.Id.ToString(), newIssue);
 
