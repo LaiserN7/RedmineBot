@@ -16,11 +16,11 @@ namespace RedmineBot.Services
         {
             const string text =
                 "Usage:\n" +
-                "/help - watch helper info\n" +
-                "ping - if bot alive return pong" +
-                "/chatId - watch id of current chat\n" +
-                "/menu - return menu\n" +
-                "/rnd - create random task\n" +
+                "`/help` - watch helper info\n" +
+                "`ping` - if bot alive return pong" +
+                "`/chatId` - watch id of current chat\n" +
+                //"`/menu` - return menu\n" +
+                "`/rnd` - create random task\n" +
                 "`/spend <hours?> <subject?>` - create task with name (if have subject + hours),\n" +
                 "spend hours to any ure task (if no, create it)\n";
 

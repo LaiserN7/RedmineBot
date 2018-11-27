@@ -160,7 +160,7 @@ namespace RedmineBot.Services
 
             float hours = default;
             string subject = default;
-            var pattern = @"^(?<type>/\w+)\s(?<hours>\d+)\s(?<subject>.*)";
+            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)\s(?<subject>.*)";
             var m = Regex.Match(text, pattern);
             if (m.Length > 0)
             {

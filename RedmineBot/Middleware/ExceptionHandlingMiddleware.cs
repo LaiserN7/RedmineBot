@@ -40,6 +40,5 @@ namespace RedmineBot.Middleware
 
             await _botService.SendText(chatId, message);
         }
-
     }
 }
