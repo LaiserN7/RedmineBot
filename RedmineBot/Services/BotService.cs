@@ -19,6 +19,7 @@ namespace RedmineBot.Services
                 "`/help` - watch helper info\n" +
                 "`ping` - if bot alive return pong" +
                 "`/chatId` - watch id of current chat\n" +
+                "`/userId` - watch id of current user\n" +
                 "`/rnd` - create random task\n" +
                 "`/spend <hours?> <subject?>` - create task with name (if have subject + hours),\n" +
                 "spend hours to any ure task (if no, create it)\n";

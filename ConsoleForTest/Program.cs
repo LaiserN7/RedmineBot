@@ -33,7 +33,8 @@ namespace ConsoleForTest
             InWork,
             Done,
             OnPause,
-            Closed
+            Closed,
+            InWorkToday = 7
         }
 
         static async Task Main(string[] args)
@@ -61,7 +62,7 @@ namespace ConsoleForTest
             var user = await manager.GetCurrentUserAsync();
             var inWork = new NameValueCollection
             {
-                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}" },
+                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
                 { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
                 { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
             };

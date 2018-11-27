@@ -6,7 +6,8 @@
         InWork,
         Done,
         OnPause,
-        Closed
+        Closed,
+        InWorkToday = 7
     }
 
     public enum Tracker : byte

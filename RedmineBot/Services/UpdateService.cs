@@ -74,6 +74,8 @@ namespace RedmineBot.Services
                         return CreateRandomIssue();
                     case "/spend":
                         return SpendTime(text);
+                    case "/userId":
+                        return _botService.SendText(_chatId, $"{_telegramUserId}");
                 }
             }
 
@@ -103,7 +105,7 @@ namespace RedmineBot.Services
             var user = await _redmineService.GetCurrentUser();
             var inWork = new NameValueCollection
             {
-                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}" },
+                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
                 { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
                 { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
             };
