@@ -41,9 +41,9 @@ namespace RedmineBot
             else
             {
                 app.UseHsts();
-            }
-            app.UseExceptionMiddleware();
+                app.UseExceptionMiddleware();
 
+            }
 
             app.UseHttpsRedirection();
             app.UseMvc();
