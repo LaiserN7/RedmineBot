@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using RedmineBot.Services;
 using Telegram.Bot.Types;
@@ -20,6 +21,12 @@ namespace RedmineBot.Controllers
         public async Task<IActionResult> Post([FromBody]Update update)
         {
             await _updateService.EchoAsync(update);
+            return Ok();
+        }
+
+        public async Task<IActionResult> Get()
+        {
+            throw new ApplicationException("test");
             return Ok();
         }
     }
