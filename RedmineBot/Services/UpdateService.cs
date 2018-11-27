@@ -20,10 +20,10 @@ namespace RedmineBot.Services
         private const string CommandType = @"^/";
         private readonly IBotService _botService;
         private readonly IRedmineService _redmineService;
-        private IOptions<DomainConfiguration> _domainConfig;
-        private IOptions<RedmineConfiguration> _redmineConfig;
-        private int telegramUserId;
-        private long chatId;
+        private readonly IOptions<DomainConfiguration> _domainConfig;
+        private readonly IOptions<RedmineConfiguration> _redmineConfig;
+        private int _telegramUserId;
+        private long _chatId;
 
         public UpdateService(IBotService botService, IRedmineService redmineService, 
             IOptions<DomainConfiguration> domainConfig, IOptions<RedmineConfiguration> redmineConfig)
@@ -56,20 +56,20 @@ namespace RedmineBot.Services
         {
            
             string text = message.Text;
-            chatId = message.Chat.Id;
+            _chatId = message.Chat.Id;
             //check trusted users?
-            telegramUserId = message.From.Id;
+            _telegramUserId = message.From.Id;
 
             if (Regex.IsMatch(text, CommandType))
             {
                 switch (text.Split(string.Empty).First())
                 {
                     case "/help":
-                        return _botService.GetHelp(chatId);
+                        return _botService.GetHelp(_chatId);
                     case "/chatId":
-                        return _botService.SendText(chatId, $"{chatId}");
+                        return _botService.SendText(_chatId, $"{_chatId}");
                     case "/menu":
-                        return _botService.GetMenu(chatId);
+                        return _botService.GetMenu(_chatId);
                     case "/rnd":
                         return CreateRandomIssue();
                     case "/spend":
@@ -78,7 +78,7 @@ namespace RedmineBot.Services
             }
 
             if (Regex.IsMatch(text, @"^ping", RegexOptions.IgnoreCase))
-                return _botService.SendText(chatId, "pong");
+                return _botService.SendText(_chatId, "pong");
 
             return Task.CompletedTask;
         }
@@ -139,22 +139,22 @@ namespace RedmineBot.Services
 
             await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id));
 
-            await _botService.SendText(chatId, $"success spend {stopWatch.ElapsedMilliseconds} ms");
+            await _botService.SendText(_chatId, $"success spend {stopWatch.ElapsedMilliseconds} ms");
         }
 
         private RedmineManager GetManager()
         {
             foreach (var user in _domainConfig.Value.Users)
             {
-                if (user.TelegramUserId != telegramUserId) continue;
+                if (user.TelegramUserId != _telegramUserId) continue;
 
                 return new RedmineManager(_redmineConfig.Value.Host, user.RedmineApiKey);
             }
             
-            throw new NotFoundException($"Api key for {nameof(telegramUserId)} = {telegramUserId} not found");
+            throw new NotFoundException($"Api key for {nameof(_telegramUserId)} = {_telegramUserId} not found");
         }
 
-        private (float hours, string subject) GetTimeAndSubject(string text)
+        private static (float hours, string subject) GetTimeAndSubject(string text)
         {
             if (text.Replace(" ", "") == "/spend") return (8.0f, null);
 

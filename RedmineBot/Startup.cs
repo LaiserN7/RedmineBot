@@ -23,6 +23,7 @@ namespace RedmineBot
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSingleton<IBotClient, BotClient>();
+            services.AddSingleton<IBotService, BotService>();
             services.AddScoped<IRedmineService, RedmineService>();
             services.AddScoped<IUpdateService, UpdateService>();
             services.Configure<BotConfiguration>(Configuration.GetSection(nameof(BotConfiguration)));
