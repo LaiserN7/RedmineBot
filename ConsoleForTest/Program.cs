@@ -41,7 +41,15 @@ namespace ConsoleForTest
         {
             
             //userId - 65 - Саша
-            await Write();
+            try
+            {
+                await Write();
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
 
             Console.WriteLine("Lool");
 
@@ -56,7 +64,7 @@ namespace ConsoleForTest
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var text = "/spend";
+            var text = "/spend -3";
             (float hours, string subject) = GetTimeAndSubject(text);
 
             var user = await manager.GetCurrentUserAsync();
