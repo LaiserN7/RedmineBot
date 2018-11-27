@@ -23,11 +23,5 @@ namespace RedmineBot.Controllers
             await _updateService.EchoAsync(update);
             return Ok();
         }
-
-        public async Task<IActionResult> Get()
-        {
-            throw new ApplicationException("test");
-            return Ok();
-        }
     }
 }

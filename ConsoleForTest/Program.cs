@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using MihaZupan;
 using Redmine.Net.Api;
 using Redmine.Net.Api.Async;
 using Redmine.Net.Api.Types;
+using RedmineBot.Helpers;
 using RedmineBot.Services;
 using Telegram.Bot;
 
@@ -17,8 +20,8 @@ namespace ConsoleForTest
     {
         private static readonly HttpToSocks5Proxy Proxy = new HttpToSocks5Proxy("31.13.224.12", 9999);
         private const string BotToken = "631170979:AAFsyz1LJ17GeDGJ6MfSaEl6P0PJKfO81q0";
-        //private const string RedmineApiKey = "c52fce8bc7508b51915f3a0b928d3f506ced9a65";//наиль
-        private const string RedmineApiKey = "e502c3df9e31fb3a4b5b0b522d609a1bb444fa2e";//рустик
+        private const string RedmineApiKey = "c52fce8bc7508b51915f3a0b928d3f506ced9a65";//наиль
+        //private const string RedmineApiKey = "e502c3df9e31fb3a4b5b0b522d609a1bb444fa2e";//рустик
         private const string RedmineHost = "https://rd.d-l-s.ru/";
 
         //private const string login = "nshakirov";
@@ -37,75 +40,96 @@ namespace ConsoleForTest
         {
             
             //userId - 65 - Саша
+            await Write();
+
+            Console.WriteLine("Lool");
+
+            Console.ReadLine();
+
+        }
+
+        private static async Task Write()
+        {
             var manager = new RedmineManager(RedmineHost, RedmineApiKey);
-            //var manager = new RedmineManager(RedmineHost, login, pass);
 
-            //parameter - fetch associated relations.
-            //status 1 - new , 2 - в работе, 3 - решена, 4 - на паузе, 5 - закрыта
-            //var parameters = new NameValueCollection {
-            //    //{ RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}"},
-            //    // { RedmineKeys.DUE_DATE, GetLastDay().ToString("yyyy-MM-dd")}, { RedmineKeys.START_DATE, "><2018-11-01|2018-11-22" },
-            //    { RedmineKeys.ISSUE_ID, "26508" }
-            //};
-            //parameter - fetch issues for a date range
-            //parameters.Add(RedmineKeys.CREATED_ON, "><2012-03-01|2012-03-07");
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
 
-            //var user = await manager.GetCurrentUserAsync();
+            var text = "/spend";
+            (float hours, string subject) = GetTimeAndSubject(text);
 
-            //var attac = await manager.GetObjectsAsync<TimeEntry>(parameters);
-            //{
-            //    Console.WriteLine("Issue: {0}.", issue);
-            //}
-            //Proxy.ResolveHostnamesLocally = true;
+            var user = await manager.GetCurrentUserAsync();
+            var inWork = new NameValueCollection
+            {
+                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}" },
+                { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
+                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
+            };
+            var myTasks = await manager.GetPaginatedObjectsAsync<Issue>(inWork);
+            if (myTasks.TotalCount != 0)
+            {
+                var filter = new NameValueCollection
+                {
+                    { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" }
+                };
+                foreach (var issue in myTasks.Objects)
+                {
+                    if (issue.EstimatedHours == null) continue;
 
-            //TelegramBotClient Bot = new TelegramBotClient(BotToken, Proxy);
-            //Bot.OnMessage += Bot_OnMessage;
-            //var s = attac.Objects[1];
-            //var iss = new Issue();
+                    filter[RedmineKeys.ISSUE_ID] = 26510.ToString();//issue.Id.ToString();
+                    var timeEntrys = await manager.GetPaginatedObjectsAsync<TimeEntry>(filter);
+                    var a = (issue.EstimatedHours);
+                    var b = (float) timeEntrys.Objects.Sum(h => h.Hours);
+                    var c = hours;
+                    var d = a - b - c;
+                    var e = d < 0.0f;
+                    if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-            //iss.AssignedTo = new IdentifiableName {Id = 107};
-            //iss.Author = new IdentifiableName {Id = 107};
-            //iss.CreatedOn = DateTime.Now;
-            //iss.CustomFields = new List<IssueCustomField>
-            //    {
-            //        new IssueCustomField{Id = 6, Multiple = false/*, Name="Тип"*/, Values = new List<CustomFieldValue> { new CustomFieldValue { Info = "Тех" }}},
-            //        new IssueCustomField{Id = 13, Multiple = false/*, Name="Deadline"*/, Values = new List<CustomFieldValue> {new CustomFieldValue{Info = "2018-10-31" } }}
-            //    };
-            //iss.Description = "";
-            //iss.DoneRatio = 0;
-            //iss.Priority = new IdentifiableName {Id = 2};//normal
-            //iss.Project = new IdentifiableName {Id = 30};//tu dji host
-            //iss.StartDate = DateTime.Today;
-            //iss.Status = new IdentifiableName {Id = 1}; //new
-            //iss.Subject = "Правка временной зоны react";
-            //iss.Tracker = new IdentifiableName {Id = 5};
-            //iss.UpdatedOn = DateTime.Now;
-            //data выполнения
-            //оценка времени
+                    //await manager.Create(Generator.GenerateTimeEntry(issue.Id));
+                    return;
+                }
 
+            }
 
-            //await manager.CreateObjectAsync(iss);
+            hours = hours <= 40.0f ? 40.0f : hours;
 
-            //User currentUser = manager.GetCurrentUser();
-            //Console.WriteLine($"Current user: {currentUser}.");
-            //Bot.StartReceiving();
-           
+            //var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: hours, subject: subject));
 
-          
-            //IRedmineService redmineService = new RedmineService(manager);
-            //IUpdateService updateService = new UpdateService(redmineService);
+            //need to update all status to OnWork????
+            //newIssue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
+            //newIssue.UpdatedOn = DateTime.Now;
+            //await _redmineService.Update(newIssue.Id.ToString(), newIssue);
 
-            //try
-            //{
-            //    //await updateService.SpendTime();
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine(e);
-            //}
-            //Console.WriteLine("success");
-            //Console.ReadLine();
-            //Bot.StopReceiving();
+            //await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id));
+
+            //await _botService.SendText(_chatId, $"success spend \n {stopWatch.ElapsedMilliseconds} ms");
+        }
+
+        private static (float hours, string subject) GetTimeAndSubject(string text)
+        {
+            if (text.Replace(" ", "") == "/spend") return (8.0f, null);
+
+            float hours = default;
+            string subject = default;
+            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)\s(?<subject>.*)";
+            var m = Regex.Match(text, pattern);
+            if (m.Length > 0)
+            {
+                float.TryParse(m.Groups["hours"].Value, out hours);
+                subject = m.Groups["subject"].Value;
+            }
+
+            var a =  hours <= 0.0f;
+            var b = hours > 168.0f;
+
+            if (hours <= 0.0f || hours > 168.0f)
+                throw new ApplicationException("Wrong time format must be between 0 and 168");
+
+            if (string.IsNullOrEmpty(subject))
+                subject = null;
+
+            return (hours, subject);
+
         }
 
         private static void Bot_OnMessage(object sender, Telegram.Bot.Args.MessageEventArgs e)

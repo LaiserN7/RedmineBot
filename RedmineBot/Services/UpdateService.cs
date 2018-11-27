@@ -108,7 +108,7 @@ namespace RedmineBot.Services
                 { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
             };
             var myTasks = await _redmineService.GetAll<Issue>(inWork);
-            if (myTasks.TotalCount != default)
+            if (myTasks.TotalCount != 0)
             {
                 var filter = new NameValueCollection
                 {
@@ -139,7 +139,7 @@ namespace RedmineBot.Services
 
             await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id));
 
-            await _botService.SendText(_chatId, $"success spend {stopWatch.ElapsedMilliseconds} ms");
+            await _botService.SendText(_chatId, $"success spend \n {stopWatch.ElapsedMilliseconds} ms");
         }
 
         private RedmineManager GetManager()
@@ -168,7 +168,7 @@ namespace RedmineBot.Services
                 subject = m.Groups["subject"].Value;
             }
 
-            if (0.0f <= hours || hours > 168.0f)
+            if (hours <= 0.0f || hours > 168.0f)
                 throw new ApplicationException("Wrong time format must be between 0 and 168");
 
             if (string.IsNullOrEmpty(subject))
