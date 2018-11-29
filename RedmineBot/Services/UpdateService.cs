@@ -23,6 +23,7 @@ namespace RedmineBot.Services
         private readonly IOptions<DomainConfiguration> _domainConfig;
         private readonly IOptions<RedmineConfiguration> _redmineConfig;
         private int _telegramUserId;
+        private string _user;
         private long _chatId;
 
         public UpdateService(IBotService botService, IRedmineService redmineService, 
@@ -102,7 +103,6 @@ namespace RedmineBot.Services
         {
             var stopWatch = new Stopwatch();
             stopWatch.Start();
-            await _botService.SendText(_chatId, $"start");
 
             (float hours, string subject) = GetTimeAndSubject(text);
 
@@ -129,25 +129,28 @@ namespace RedmineBot.Services
                     var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
                     if ( issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f ) continue;
 
-                    await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id, userId: user.Id, projectId: issue.Project.Id));
-                    await _botService.SendText(_chatId, $"success spend {hours} hours to last task, /taskId = {issue.Id}/\n{stopWatch.ElapsedMilliseconds} ms");
+                    await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id, hours: (decimal) hours, userId: user.Id, projectId: issue.Project.Id));
+                    await _botService.SendText(_chatId, 
+                        $"success spend {hours} hours to last task, taskId = {issue.Id}\n " +
+                        $"for {stopWatch.ElapsedMilliseconds} ms by {_user}");
                     return;
                 }
                
             }
          
-            hours = hours <= 40.0f ? 40.0f : hours;
+            var taskHours = hours <= 40.0f ? 40.0f : hours;
 
-            var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: hours, subject: subject));
+            var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: taskHours, subject: subject));
 
             //need to update all status to OnWork????
             newIssue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
             newIssue.UpdatedOn = DateTime.Now;
             await _redmineService.Update(newIssue.Id.ToString(), newIssue);
 
-            await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, userId: user.Id));
+            await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, hours: (decimal) hours, userId: user.Id));
 
-            await _botService.SendText(_chatId, $"success spend {hours} hours to new task /taskId = {newIssue.Id}/ \n{stopWatch.ElapsedMilliseconds} ms");
+            await _botService.SendText(_chatId, $"success spend {hours} hours to new task taskId = {newIssue.Id} \n" +
+                                                $"for {stopWatch.ElapsedMilliseconds} ms by {_user}");
         }
 
         private RedmineManager GetManager()
@@ -155,7 +158,7 @@ namespace RedmineBot.Services
             foreach (var user in _domainConfig.Value.Users)
             {
                 if (user.TelegramUserId != _telegramUserId) continue;
-
+                _user = user.Name;
                 return new RedmineManager(_redmineConfig.Value.Host, user.RedmineApiKey);
             }
             
