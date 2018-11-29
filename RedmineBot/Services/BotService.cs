@@ -21,8 +21,7 @@ namespace RedmineBot.Services
                 "`/chatId` - watch id of current chat\n" +
                 "`/userId` - watch id of current user\n" +
                 "`/rnd` - create random task\n" +
-                "`/spend <hours?> <subject?>` - create task with name (if have subject + hours),\n" +
-                "spend hours to any ure task (if no, create it)\n";
+                "`/spend <hours?>` - spend hours to any ure task(if no, create it)\n";
             //"`/menu` - return menu\n" +
             //"/inline   - send inline keyboard\n" +
             //"/keyboard - send custom keyboard\n" +

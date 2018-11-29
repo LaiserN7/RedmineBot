@@ -64,7 +64,7 @@ namespace ConsoleForTest
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var text = "/spend";
+            var text = "/spend 10";
             (float hours, string subject) = GetTimeAndSubject(text);
 
             var user = await manager.GetCurrentUserAsync();
@@ -120,7 +120,7 @@ namespace ConsoleForTest
 
             float hours = default;
             string subject = default;
-            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)\s(?<subject>.*)";
+            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
             var m = Regex.Match(text, pattern);
             if (m.Length > 0)
             {

@@ -110,7 +110,7 @@ namespace RedmineBot.Services
                 { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
             };
             var myTasks = await _redmineService.GetAll<Issue>(inWork);
-            if (myTasks.TotalCount != 0)
+            if (myTasks.TotalCount != default)
             {
                 var filter = new NameValueCollection
                 {
@@ -125,7 +125,7 @@ namespace RedmineBot.Services
                     if ( issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f ) continue;
 
                     await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id, userId: user.Id, projectId: issue.Project.Id));
-                    await _botService.SendText(_chatId, $"success spend to last task \n{stopWatch.ElapsedMilliseconds} ms");
+                    await _botService.SendText(_chatId, $"success spend {hours} hours to last task, /taskId = {issue.Id}/\n{stopWatch.ElapsedMilliseconds} ms");
                     return;
                 }
                
@@ -142,7 +142,7 @@ namespace RedmineBot.Services
 
             await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, userId: user.Id));
 
-            await _botService.SendText(_chatId, $"success spend \n{stopWatch.ElapsedMilliseconds} ms");
+            await _botService.SendText(_chatId, $"success spend {hours} hours to new task /taskId = {newIssue.Id}/ \n{stopWatch.ElapsedMilliseconds} ms");
         }
 
         private RedmineManager GetManager()
@@ -163,7 +163,7 @@ namespace RedmineBot.Services
 
             float hours = default;
             string subject = default;
-            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)\s(?<subject>.*)";
+            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
             var m = Regex.Match(text, pattern);
             if (m.Length > 0)
             {
