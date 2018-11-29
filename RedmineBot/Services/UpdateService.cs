@@ -99,6 +99,12 @@ namespace RedmineBot.Services
         {
             var stopWatch = new Stopwatch();
             stopWatch.Start();
+            await _botService.SendText(_chatId, $"start");
+
+            (float hours1, string subject1) = GetTimeAndSubject1(text);
+
+            await _botService.SendText(_chatId, $"hours1 = {hours1} /subject1 = {subject1}/ \n{stopWatch.ElapsedMilliseconds} ms");
+
             (float hours, string subject) = GetTimeAndSubject(text);
 
             await _botService.SendText(_chatId, $"hours = {hours} /subject = {subject}/ \n{stopWatch.ElapsedMilliseconds} ms");
@@ -174,7 +180,9 @@ namespace RedmineBot.Services
             //}
 
             var number = text.Replace("/spend", "").Replace(" ", "");
-            float.TryParse(text, out hours);
+            //float.TryParse(text, out hours);
+            int.TryParse(text, out var hour);
+            hours = (float) hour;
 
             if (hours <= 0.0f || hours > 168.0f)
                 throw new ApplicationException("Wrong time format must be between 0 and 168");
@@ -183,6 +191,15 @@ namespace RedmineBot.Services
             //    subject = null;
 
             return (hours, null);
+
+        }
+
+
+        private (float hours, string subject) GetTimeAndSubject1(string text)
+        {
+            return (1, null);
+
+
 
         }
     }
