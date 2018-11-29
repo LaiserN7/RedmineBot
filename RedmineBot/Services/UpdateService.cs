@@ -164,22 +164,25 @@ namespace RedmineBot.Services
             if (text.Replace(" ", "") == "/spend") return (8.0f, null);
 
             float hours = default;
-            string subject = default;
-            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
-            var m = Regex.Match(text, pattern);
-            if (m.Length > 0)
-            {
-                float.TryParse(m.Groups["hours"].Value, out hours);
-                subject = m.Groups["subject"].Value;
-            }
+            //string subject = default;
+            //const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
+            //var m = Regex.Match(text, pattern);
+            //if (m.Length > 0)
+            //{
+            //    float.TryParse(m.Groups["hours"].Value, out hours);
+            //    subject = m.Groups["subject"].Value;
+            //}
+
+            var number = text.Replace("/spend", "").Replace(" ", "");
+            float.TryParse(text, out hours);
 
             if (hours <= 0.0f || hours > 168.0f)
                 throw new ApplicationException("Wrong time format must be between 0 and 168");
 
-            if (string.IsNullOrEmpty(subject))
-                subject = null;
+            //if (string.IsNullOrEmpty(subject))
+            //    subject = null;
 
-            return (hours, subject);
+            return (hours, null);
 
         }
     }
