@@ -101,6 +101,8 @@ namespace RedmineBot.Services
             stopWatch.Start();
             (float hours, string subject) = GetTimeAndSubject(text);
 
+            await _botService.SendText(_chatId, $"hours = {hours} /subject = {subject}/ \n{stopWatch.ElapsedMilliseconds} ms");
+
             _redmineService.Manager = GetManager(); // set manager for user
             var user = await _redmineService.GetCurrentUser();
             var inWork = new NameValueCollection
@@ -157,7 +159,7 @@ namespace RedmineBot.Services
             throw new NotFoundException($"Api key for {nameof(_telegramUserId)} = {_telegramUserId} not found");
         }
 
-        private static (float hours, string subject) GetTimeAndSubject(string text)
+        private (float hours, string subject) GetTimeAndSubject(string text)
         {
             if (text.Replace(" ", "") == "/spend") return (8.0f, null);
 

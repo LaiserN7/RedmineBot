@@ -36,7 +36,7 @@ namespace RedmineBot.Middleware
         private async Task OnException(HttpContext context, Exception exception)
         {
             //(long chatId, string message) = await Request.GetInfo(context);
-            var chatId = /*chatId != 0 ? chatId :*/ _config.Value.DefaultChatId;
+            var chatId = /*chatId != 0 ? chatId :*/ /*_config.Value.DefaultChatId;*/ 449279856;
             var message =/* message + Environment.NewLine +*/ exception.ToString();
 
             await _botService.SendText(chatId, message);

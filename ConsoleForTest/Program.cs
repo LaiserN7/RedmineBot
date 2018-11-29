@@ -76,7 +76,7 @@ namespace ConsoleForTest
             };
             var myTasks = await manager.GetPaginatedObjectsAsync<Issue>(inWork);
             if (myTasks.TotalCount != 0)
-            {
+             {
                 var filter = new NameValueCollection
                 {
                     { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" }
@@ -94,7 +94,6 @@ namespace ConsoleForTest
                     var e = d < 0.0f;
                     if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-                    await manager.CreateObjectAsync(Generator.GenerateTimeEntry(issue.Id));
                     return;
                 }
                 Console.WriteLine("lol");
