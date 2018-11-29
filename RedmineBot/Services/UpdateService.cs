@@ -23,7 +23,6 @@ namespace RedmineBot.Services
         private readonly IOptions<DomainConfiguration> _domainConfig;
         private readonly IOptions<RedmineConfiguration> _redmineConfig;
         private int _telegramUserId;
-        private string _user;
         private long _chatId;
 
         public UpdateService(IBotService botService, IRedmineService redmineService, 
@@ -131,8 +130,8 @@ namespace RedmineBot.Services
 
                     await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id, hours: (decimal) hours, userId: user.Id, projectId: issue.Project.Id));
                     await _botService.SendText(_chatId, 
-                        $"success spend {hours} hours to last task, taskId = {issue.Id}\n " +
-                        $"for {stopWatch.ElapsedMilliseconds} ms by {_user}");
+                        $"success spend '{hours}' hours to last task, taskId = {issue.Id}\n" +
+                        $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
                     return;
                 }
                
@@ -149,8 +148,8 @@ namespace RedmineBot.Services
 
             await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, hours: (decimal) hours, userId: user.Id));
 
-            await _botService.SendText(_chatId, $"success spend {hours} hours to new task taskId = {newIssue.Id} \n" +
-                                                $"for {stopWatch.ElapsedMilliseconds} ms by {_user}");
+            await _botService.SendText(_chatId, $"success spend '{hours}' hours to new task taskId = {newIssue.Id}\n" +
+                                                $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
         }
 
         private RedmineManager GetManager()
@@ -158,7 +157,6 @@ namespace RedmineBot.Services
             foreach (var user in _domainConfig.Value.Users)
             {
                 if (user.TelegramUserId != _telegramUserId) continue;
-                _user = user.Name;
                 return new RedmineManager(_redmineConfig.Value.Host, user.RedmineApiKey);
             }
             
