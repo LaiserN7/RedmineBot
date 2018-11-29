@@ -101,8 +101,8 @@ namespace RedmineBot.Services
 
             (int userId, int issueId, int hours, int projectId) = GetInfoFromCallBack(callback.Data);
 
-            if (userId != _telegramUserId)
-                throw new ApplicationException("userd id from callback <--> telegramUserId missmatch");
+            if (userId != callback.From.Id)
+                throw new ApplicationException("userd id from callback <--> user id message missmatch");
 
             await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: (decimal)hours, userId: userId, projectId: projectId));
             await _botService.SendText(_chatId,
