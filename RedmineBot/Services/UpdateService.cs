@@ -80,7 +80,7 @@ namespace RedmineBot.Services
                         return SpendTime(text);
                     case "/userId":
                         return _botService.SendText(_chatId, $"{_telegramUserId}");
-                    case "myTasks":
+                    case "/myTasks":
                         return GetMyTasks();
                 }
             }

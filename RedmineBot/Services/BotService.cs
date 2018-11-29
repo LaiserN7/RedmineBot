@@ -17,7 +17,7 @@ namespace RedmineBot.Services
             const string text =
                 "Usage:\n" +
                 "`/help` - watch helper info\n" +
-                "`ping` - if bot alive return pong" +
+                "`ping` - if bot alive return pong\n" +
                 "`/chatId` - watch id of current chat\n" +
                 "`/userId` - watch id of current user\n" +
                 "`/rnd` - create random task\n" +
