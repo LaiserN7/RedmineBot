@@ -136,6 +136,9 @@ namespace RedmineBot.Services
 
         private async Task GetMyTasks(string text)
         {
+            if (text.Replace(" ", "") == "/myTasks")
+                throw new ApplicationException("Time not indicated");
+
             (float hours, string subject) = GetTimeAndSubject(text);
 
             var user = await _redmineService.GetCurrentUser();
@@ -165,7 +168,7 @@ namespace RedmineBot.Services
                     if (issue.EstimatedHours - (float) timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
                     rowButtons.Add(GetInlineKeyboard(issue.Subject, 
-                        $"userId={_telegramUserId}&issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}"));
+                        $"userId={_telegramUserId}&issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}&chatId={_chatId}"));
                 }
 
                 if (rowButtons.Count == default)
