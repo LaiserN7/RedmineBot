@@ -38,7 +38,7 @@ namespace RedmineBot.Services
 
         public Task EchoAsync(Update update)
         {
-            _redmineService.Manager = GetManager(); // set manager for user
+           
             return Handling(update);
         }
 
@@ -63,6 +63,7 @@ namespace RedmineBot.Services
             _chatId = message.Chat.Id;
             //check trusted users?
             _telegramUserId = message.From.Id;
+            _redmineService.Manager = GetManager(); // set manager for user
 
             if (Regex.IsMatch(text, CommandType))
             {
