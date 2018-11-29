@@ -7,7 +7,7 @@ namespace RedmineBot.Services
     {
         private readonly IBotClient _client;
 
-        public BotService(IBotClient client) 
+        public BotService(IBotClient client)
         {
             _client = client;
         }
@@ -21,7 +21,8 @@ namespace RedmineBot.Services
                 "`/chatId` - watch id of current chat\n" +
                 "`/userId` - watch id of current user\n" +
                 "`/rnd` - create random task\n" +
-                "`/spend <hours?>` - spend hours to any ure task(if no, create it)\n";
+                "`/spend <hours?>` - spend hours to any ure task (if no, create it) default is 8\n" +
+                "`/myTasks - show ure opened tasks";
             //"`/menu` - return menu\n" +
             //"/inline   - send inline keyboard\n" +
             //"/keyboard - send custom keyboard\n" +
@@ -37,6 +38,11 @@ namespace RedmineBot.Services
         public Task SendText(long chatId, string message)
         {
             return _client.Client.SendTextMessageAsync(chatId, message);
+        }
+
+        public Task SendTextWithReplyMarkup(long chatId, string title, IReplyMarkup reply )
+        {
+            return _client.Client.SendTextMessageAsync(chatId, title, replyMarkup: reply);
         }
 
         public Task GetMenu(long chatId)

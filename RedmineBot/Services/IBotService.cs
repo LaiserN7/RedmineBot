@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace RedmineBot.Services
 {
@@ -7,5 +8,6 @@ namespace RedmineBot.Services
         Task GetHelp(long chatId);
         Task SendText(long chatId, string message);
         Task GetMenu(long chatId);
+        Task SendTextWithReplyMarkup(long chatId, string title, IReplyMarkup reply)
     }
 }

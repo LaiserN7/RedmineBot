@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
@@ -11,6 +12,7 @@ using Redmine.Net.Api.Types;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using RedmineBot.Helpers;
+using Telegram.Bot.Types.ReplyMarkups;
 using IssueStatus = RedmineBot.Helpers.IssueStatus;
 
 namespace RedmineBot.Services
@@ -36,6 +38,7 @@ namespace RedmineBot.Services
 
         public Task EchoAsync(Update update)
         {
+            _redmineService.Manager = GetManager(); // set manager for user
             return Handling(update);
         }
 
@@ -54,10 +57,8 @@ namespace RedmineBot.Services
 
         private Task HandlingMessage(Message message)
         {
-           
-            string text = message.Text;
-            if (message == null)
-                throw  new ApplicationException("Message can't be null");
+            string text = message?.Text ??
+                throw new ApplicationException("Message can't be null");
 
             _chatId = message.Chat.Id;
             //check trusted users?
@@ -79,6 +80,8 @@ namespace RedmineBot.Services
                         return SpendTime(text);
                     case "/userId":
                         return _botService.SendText(_chatId, $"{_telegramUserId}");
+                    case "myTasks":
+                        return GetMyTasks();
                 }
             }
 
@@ -97,15 +100,68 @@ namespace RedmineBot.Services
         {
             return _redmineService.Create(Generator.GenerateIssue());
         }
-       
+
+        private async Task GetMyTasks()
+        {
+            var hours = 8.0f;
+            
+            var user = await _redmineService.GetCurrentUser();
+            var inWork = new NameValueCollection
+            {
+                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
+                { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
+                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
+            };
+            var myTasks = await _redmineService.GetAll<Issue>(inWork);
+            
+            
+            if (myTasks.TotalCount != default)
+            {
+                var filter = new NameValueCollection
+                {
+                    { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" }
+                };
+                var rowButtons = new List<IEnumerable<InlineKeyboardButton>>();
+                var inlineKeyboard = new InlineKeyboardMarkup(rowButtons);
+                foreach (var issue in myTasks.Objects)
+                {
+                    if (issue.EstimatedHours == null) continue;
+
+                    filter[RedmineKeys.ISSUE_ID] = issue.Id.ToString();
+                    var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
+                    if (issue.EstimatedHours - (float) timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
+
+                    rowButtons.Add(GetInlineKeyboard(issue.Subject, issue.Id));
+                }
+
+                if (rowButtons.Count == 0)
+                {
+                    await _botService.SendText(_chatId, "ure haven't opened task with space time");
+                    return;
+                }
+
+                await _botService.SendTextWithReplyMarkup(_chatId, $"My tasks, where i cand spend {hours} hours", inlineKeyboard);
+            }
+
+            await _botService.SendText(_chatId, "ure haven't opened task");
+            return;
+        }
+
+        private InlineKeyboardButton[] GetInlineKeyboard(string taskName, int taskId)
+        {
+            return new InlineKeyboardButton[]
+            {
+                InlineKeyboardButton.WithCallbackData(text:taskName, callbackData:taskId.ToString())
+            };
+        }
+
         private async Task SpendTime(string text)
         {
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
             (float hours, string subject) = GetTimeAndSubject(text);
-
-            _redmineService.Manager = GetManager(); // set manager for user
+        
             var user = await _redmineService.GetCurrentUser();
             var inWork = new NameValueCollection
             {
