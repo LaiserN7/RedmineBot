@@ -22,7 +22,7 @@ namespace RedmineBot.Services
                 "`/userId` - watch id of current user\n" +
                 "`/rnd` - create random task\n" +
                 "`/spend <hours?>` - spend hours to any ure task (if no, create it) default is 8\n" +
-                "`/myTasks - show ure opened tasks";
+                "`/myTasks <hours?> - show ure opened tasks where ure can spend";
             //"`/menu` - return menu\n" +
             //"/inline   - send inline keyboard\n" +
             //"/keyboard - send custom keyboard\n" +

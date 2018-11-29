@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Options;
 using Redmine.Net.Api;
 using Redmine.Net.Api.Exceptions;
@@ -14,6 +15,7 @@ using Telegram.Bot.Types.Enums;
 using RedmineBot.Helpers;
 using Telegram.Bot.Types.ReplyMarkups;
 using IssueStatus = RedmineBot.Helpers.IssueStatus;
+using User = Redmine.Net.Api.Types.User;
 
 namespace RedmineBot.Services
 {
@@ -82,7 +84,7 @@ namespace RedmineBot.Services
                     case "/userId":
                         return _botService.SendText(_chatId, $"{_telegramUserId}");
                     case "/myTasks":
-                        return GetMyTasks();
+                        return GetMyTasks(text);
                 }
             }
 
@@ -92,9 +94,35 @@ namespace RedmineBot.Services
             return Task.CompletedTask;
         }
 
-        private Task HandlingCallback(CallbackQuery callback)
+        private async Task HandlingCallback(CallbackQuery callback)
         {
-            throw new NotImplementedException();
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            (int userId, int issueId, int hours, int projectId) = GetInfoFromCallBack(callback.Data);
+
+            if (userId != _telegramUserId)
+                throw new ApplicationException("userd id from callback <--> telegramUserId missmatch");
+
+            await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: (decimal)hours, userId: userId, projectId: projectId));
+            await _botService.SendText(_chatId,
+                $"success spend '{hours}' hours to last task, taskId = {issueId}\n" +
+                $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+            return;
+        }
+
+        private (int userId, int issueId, int hours, int projectId) GetInfoFromCallBack(string callBack)
+        {
+            const string pattern = @"^userId=(?<userId>-?\d+)&issueId=(?<issueId>-?\d+)&hours=(?<hours>-?\d+)&projectId=(?<projectId>-?\d+)";
+
+            var m = Regex.Match(callBack, pattern);
+            if (m.Length > 0)
+                if (int.TryParse(m.Groups["userId"].Value, out int userId) && int.TryParse(m.Groups["issueId"].Value, out int issueId) 
+                                                                           && int.TryParse(m.Groups["hours"].Value, out int hours) 
+                                                                           && int.TryParse(m.Groups["projectId"].Value, out int projectId))
+                    return (userId, issueId, hours, projectId);
+                
+            throw new ApplicationException($"Wrong query callBack = {callBack}");
         }
 
         private Task CreateRandomIssue()
@@ -102,10 +130,10 @@ namespace RedmineBot.Services
             return _redmineService.Create(Generator.GenerateIssue());
         }
 
-        private async Task GetMyTasks()
+        private async Task GetMyTasks(string text)
         {
-            var hours = 8.0f;
-            
+            (float hours, string subject) = GetTimeAndSubject(text);
+
             var user = await _redmineService.GetCurrentUser();
             var inWork = new NameValueCollection
             {
@@ -132,29 +160,28 @@ namespace RedmineBot.Services
                     var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
                     if (issue.EstimatedHours - (float) timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-                    rowButtons.Add(GetInlineKeyboard(issue.Subject, issue.Id));
+                    rowButtons.Add(GetInlineKeyboard(issue.Subject, 
+                        $"userId={_telegramUserId}&issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}"));
                 }
 
-                if (rowButtons.Count == 0)
+                if (rowButtons.Count == default)
                 {
-                    await _botService.SendText(_chatId, "ure haven't opened task with space time");
+                    await _botService.SendText(_chatId, "Ure haven't opened task with space time");
                     return;
                 }
 
                 await _botService.SendTextWithReplyMarkup(_chatId, $"My tasks, where i cand spend {hours} hours", inlineKeyboard);
+                return;
             }
 
-            await _botService.SendText(_chatId, "ure haven't opened task");
+            await _botService.SendText(_chatId, "Ure haven't opened task");
             return;
         }
 
-        private InlineKeyboardButton[] GetInlineKeyboard(string taskName, int taskId)
+        private InlineKeyboardButton[] GetInlineKeyboard(string taskName, string callBackData) => new InlineKeyboardButton[]
         {
-            return new InlineKeyboardButton[]
-            {
-                InlineKeyboardButton.WithCallbackData(text:taskName, callbackData:taskId.ToString())
-            };
-        }
+            InlineKeyboardButton.WithCallbackData(text:taskName, callbackData:callBackData)
+        };
 
         private async Task SpendTime(string text)
         {
