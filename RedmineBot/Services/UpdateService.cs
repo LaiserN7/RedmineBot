@@ -56,13 +56,16 @@ namespace RedmineBot.Services
         {
            
             string text = message.Text;
+            if (message == null)
+                throw  new ApplicationException("Message can't be null");
+
             _chatId = message.Chat.Id;
             //check trusted users?
             _telegramUserId = message.From.Id;
 
             if (Regex.IsMatch(text, CommandType))
             {
-                switch (text.Split(string.Empty).First())
+                switch (text.Split(" ").First())
                 {
                     case "/help":
                         return _botService.GetHelp(_chatId);
@@ -101,13 +104,7 @@ namespace RedmineBot.Services
             stopWatch.Start();
             await _botService.SendText(_chatId, $"start");
 
-            (float hours1, string subject1) = GetTimeAndSubject1(text);
-
-            await _botService.SendText(_chatId, $"hours1 = {hours1} /subject1 = {subject1}/ \n{stopWatch.ElapsedMilliseconds} ms");
-
             (float hours, string subject) = GetTimeAndSubject(text);
-
-            await _botService.SendText(_chatId, $"hours = {hours} /subject = {subject}/ \n{stopWatch.ElapsedMilliseconds} ms");
 
             _redmineService.Manager = GetManager(); // set manager for user
             var user = await _redmineService.GetCurrentUser();
@@ -170,19 +167,14 @@ namespace RedmineBot.Services
             if (text.Replace(" ", "") == "/spend") return (8.0f, null);
 
             float hours = default;
-            //string subject = default;
-            //const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
-            //var m = Regex.Match(text, pattern);
-            //if (m.Length > 0)
-            //{
-            //    float.TryParse(m.Groups["hours"].Value, out hours);
-            //    subject = m.Groups["subject"].Value;
-            //}
-
-            var number = text.Replace("/spend", "").Replace(" ", "");
-            //float.TryParse(text, out hours);
-            int.TryParse(text, out var hour);
-            hours = (float) hour;
+            string subject = default;
+            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
+            var m = Regex.Match(text, pattern);
+            if (m.Length > 0)
+            {
+                float.TryParse(m.Groups["hours"].Value, out hours);
+                //subject = m.Groups["subject"].Value;
+            }
 
             if (hours <= 0.0f || hours > 168.0f)
                 throw new ApplicationException("Wrong time format must be between 0 and 168");
@@ -190,16 +182,7 @@ namespace RedmineBot.Services
             //if (string.IsNullOrEmpty(subject))
             //    subject = null;
 
-            return (hours, null);
-
-        }
-
-
-        private (float hours, string subject) GetTimeAndSubject1(string text)
-        {
-            return (1, null);
-
-
+            return (hours, subject);
 
         }
     }

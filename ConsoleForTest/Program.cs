@@ -64,8 +64,7 @@ namespace ConsoleForTest
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var text = "/spend 10";
-            (float hours, string subject) = GetTimeAndSubject(text);
+          
 
             var user = await manager.GetCurrentUserAsync();
             var inWork = new NameValueCollection
