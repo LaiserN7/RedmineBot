@@ -74,31 +74,31 @@ namespace ConsoleForTest
                 { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
             };
             var myTasks = await manager.GetPaginatedObjectsAsync<Issue>(inWork);
-            if (myTasks.TotalCount != 0)
-             {
-                var filter = new NameValueCollection
-                {
-                    { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" }
-                };
-                foreach (var issue in myTasks.Objects)
-                {
-                    if (issue.EstimatedHours == null) continue;
+            //if (myTasks.TotalCount != 0)
+            // {
+            //    var filter = new NameValueCollection
+            //    {
+            //        { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" }
+            //    };
+            //    foreach (var issue in myTasks.Objects)
+            //    {
+            //        if (issue.EstimatedHours == null) continue;
 
-                    filter[RedmineKeys.ISSUE_ID] = 26510.ToString();//issue.Id.ToString();
-                    var timeEntrys = await manager.GetPaginatedObjectsAsync<TimeEntry>(filter);
-                    var a = (issue.EstimatedHours);
-                    var b = (float) timeEntrys.Objects.Sum(h => h.Hours);
-                    var c = hours;
-                    var d = a - b - c;
-                    var e = d < 0.0f;
-                    if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
+            //        filter[RedmineKeys.ISSUE_ID] = 26510.ToString();//issue.Id.ToString();
+            //        var timeEntrys = await manager.GetPaginatedObjectsAsync<TimeEntry>(filter);
+            //        var a = (issue.EstimatedHours);
+            //        var b = (float) timeEntrys.Objects.Sum(h => h.Hours);
+            //        var c = hours;
+            //        var d = a - b - c;
+            //        var e = d < 0.0f;
+            //        if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-                    return;
-                }
-                Console.WriteLine("lol");
-            }
+            //        return;
+            //    }
+            //    Console.WriteLine("lol");
+            //}
 
-            hours = hours <= 40.0f ? 40.0f : hours;
+            //hours = hours <= 40.0f ? 40.0f : hours;
 
             //var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: hours, subject: subject));
 
