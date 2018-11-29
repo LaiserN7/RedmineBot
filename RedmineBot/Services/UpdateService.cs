@@ -102,29 +102,29 @@ namespace RedmineBot.Services
             _telegramUserId = callback.From.Id;
             _redmineService.Manager = GetManager(); // set manager for user
 
-            (int userId, int issueId, int hours, int projectId, int chatId) = GetInfoFromCallBack(callback.Data);
+            (/*int userId,*/ int issueId, int hours, int projectId, int chatId) = GetInfoFromCallBack(callback.Data);
 
-            if (userId != callback.From.Id)
-                throw new ApplicationException("userd id from callback <--> user id message missmatch");
+            //if (userId != callback.From.Id)
+            //    throw new ApplicationException("userd id from callback <--> user id message missmatch");
 
-            await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: (decimal)hours, userId: userId, projectId: projectId));
+            await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: (decimal)hours, userId: _telegramUserId, projectId: projectId));
             await _botService.SendText(chatId,
                 $"success spend '{hours}' hours to last task, taskId = {issueId}\n" +
                 $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
             return;
         }
 
-        private (int userId, int issueId, int hours, int projectId, int chatId) GetInfoFromCallBack(string callBack)
+        private (/*int userId,*/ int issueId, int hours, int projectId, int chatId) GetInfoFromCallBack(string callBack)
         {
-            const string pattern = @"^userId=(?<userId>-?\d+)&issueId=(?<issueId>-?\d+)&hours=(?<hours>-?\d+)&projectId=(?<projectId>-?\d+)&chatId=(?<chatId>-?\d+)";
+            const string pattern = @"^issueId=(?<issueId>-?\d+)&hours=(?<hours>-?\d+)&projectId=(?<projectId>-?\d+)&chatId=(?<chatId>-?\d+)";
 
             var m = Regex.Match(callBack, pattern);
             if (m.Length > 0)
-                if (int.TryParse(m.Groups["userId"].Value, out int userId) && int.TryParse(m.Groups["issueId"].Value, out int issueId) 
+                if (/*int.TryParse(m.Groups["userId"].Value, out int userId) &&*/ int.TryParse(m.Groups["issueId"].Value, out int issueId) 
                                                                            && int.TryParse(m.Groups["hours"].Value, out int hours) 
                                                                            && int.TryParse(m.Groups["projectId"].Value, out int projectId)
                                                                            && int.TryParse(m.Groups["chatId"].Value, out int chatId))
-                    return (userId, issueId, hours, projectId, chatId);
+                    return (/*userId,*/ issueId, hours, projectId, chatId);
                 
             throw new ApplicationException($"Wrong query callBack = {callBack}");
         }
@@ -168,7 +168,7 @@ namespace RedmineBot.Services
                     if (issue.EstimatedHours - (float) timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
                     rowButtons.Add(GetInlineKeyboard(issue.Subject, 
-                        $"userId={_telegramUserId}&issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}&chatId={_chatId}"));
+                        $"issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}&chatId={_chatId}"));
                 }
 
                 if (rowButtons.Count == default)
