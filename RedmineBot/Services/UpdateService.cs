@@ -80,9 +80,9 @@ namespace RedmineBot.Services
                         return SpendTime(text);
                     case "/userId":
                         return _botService.SendText(_chatId, $"{_telegramUserId}");
-                    case "/myTasks":
+                    case "/tasks":
                         return GetMyTasks(text);
-                    case "/myInfo":
+                    case "/info":
                         return GetMyInfo();
                 }
             }
@@ -202,7 +202,7 @@ namespace RedmineBot.Services
                     var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
                     if (issue.EstimatedHours - (float) timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-                    rowButtons.Add(GetInlineKeyboard($"{issue.Id}: issue.Subject", 
+                    rowButtons.Add(GetInlineKeyboard($"{issue.Id}: {issue.Subject}", 
                         $"issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}&chatId={_chatId}"));
                 }
 
