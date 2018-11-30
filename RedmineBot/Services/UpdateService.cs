@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
 using Microsoft.Extensions.Options;
 using Redmine.Net.Api;
 using Redmine.Net.Api.Exceptions;
@@ -15,7 +14,6 @@ using Telegram.Bot.Types.Enums;
 using RedmineBot.Helpers;
 using Telegram.Bot.Types.ReplyMarkups;
 using IssueStatus = RedmineBot.Helpers.IssueStatus;
-using User = Redmine.Net.Api.Types.User;
 
 namespace RedmineBot.Services
 {
@@ -40,7 +38,6 @@ namespace RedmineBot.Services
 
         public Task EchoAsync(Update update)
         {
-           
             return Handling(update);
         }
 
@@ -85,6 +82,8 @@ namespace RedmineBot.Services
                         return _botService.SendText(_chatId, $"{_telegramUserId}");
                     case "/myTasks":
                         return GetMyTasks(text);
+                    case "/myInfo":
+                        return GetMyInfo();
                 }
             }
 
@@ -92,6 +91,37 @@ namespace RedmineBot.Services
                 return _botService.SendText(_chatId, "pong");
 
             return Task.CompletedTask;
+        }
+
+        private async Task GetMyInfo()
+        {
+            var stopWatch = new Stopwatch();
+            stopWatch.Start();
+
+            var user = await _redmineService.GetCurrentUser();
+
+            var inWork = new NameValueCollection
+            {
+                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
+                { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
+                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
+            };
+            var myTasks = await _redmineService.GetAll<Issue>(inWork);
+
+            var filter = new NameValueCollection
+            {
+                { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" },
+                { RedmineKeys.USER_ID, user.Id.ToString() },
+                { RedmineKeys.LIMIT, "100" },
+            };
+            var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
+
+            var spendedTime = timeEntrys.Objects.Sum(h => h.Hours);
+
+            await _botService.SendText(_chatId,
+                $"Opened tasks in current month: {myTasks.TotalCount}\n" +
+                $"Spended hours in current month: {spendedTime}\n" +
+                $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
         }
 
         private async Task HandlingCallback(CallbackQuery callback)
@@ -102,30 +132,35 @@ namespace RedmineBot.Services
             _telegramUserId = callback.From.Id;
             _redmineService.Manager = GetManager(); // set manager for user
 
-            (/*int userId,*/ int issueId, int hours, int projectId, int chatId) = GetInfoFromCallBack(callback.Data);
+            var user = await _redmineService.GetCurrentUser();
 
-            //if (userId != callback.From.Id)
-            //    throw new ApplicationException("userd id from callback <--> user id message missmatch");
+            (int issueId, int hours, int projectId, int chatId) = GetInfoFromCallBack(callback.Data);
 
-            await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: (decimal)hours, userId: _telegramUserId, projectId: projectId));
+            if (chatId != callback.From.Id)
+                throw new ApplicationException($"U can spend only in private chat or it's not ure task to userId = {_telegramUserId}");
+
+            await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: hours, userId: user.Id, projectId: projectId));
             await _botService.SendText(chatId,
                 $"success spend '{hours}' hours to last task, taskId = {issueId}\n" +
                 $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
             return;
         }
 
-        private (/*int userId,*/ int issueId, int hours, int projectId, int chatId) GetInfoFromCallBack(string callBack)
+        private (int issueId, int hours, int projectId, int chatId) GetInfoFromCallBack(string callBack)
         {
             const string pattern = @"^issueId=(?<issueId>-?\d+)&hours=(?<hours>-?\d+)&projectId=(?<projectId>-?\d+)&chatId=(?<chatId>-?\d+)";
 
             var m = Regex.Match(callBack, pattern);
+
             if (m.Length > 0)
-                if (/*int.TryParse(m.Groups["userId"].Value, out int userId) &&*/ int.TryParse(m.Groups["issueId"].Value, out int issueId) 
-                                                                           && int.TryParse(m.Groups["hours"].Value, out int hours) 
-                                                                           && int.TryParse(m.Groups["projectId"].Value, out int projectId)
-                                                                           && int.TryParse(m.Groups["chatId"].Value, out int chatId))
-                    return (/*userId,*/ issueId, hours, projectId, chatId);
-                
+                if (int.TryParse(m.Groups["issueId"].Value, out int issueId)
+                    && int.TryParse(m.Groups["hours"].Value, out int hours)
+                    && int.TryParse(m.Groups["projectId"].Value, out int projectId)
+                    && int.TryParse(m.Groups["chatId"].Value, out int chatId))
+                {
+                    return (issueId, hours, projectId, chatId);
+                }
+
             throw new ApplicationException($"Wrong query callBack = {callBack}");
         }
 
@@ -167,7 +202,7 @@ namespace RedmineBot.Services
                     var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
                     if (issue.EstimatedHours - (float) timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) continue;
 
-                    rowButtons.Add(GetInlineKeyboard(issue.Subject, 
+                    rowButtons.Add(GetInlineKeyboard($"{issue.Id}: issue.Subject", 
                         $"issueId={issue.Id}&hours={hours}&projectId={issue.Project.Id}&chatId={_chatId}"));
                 }
 
@@ -268,8 +303,8 @@ namespace RedmineBot.Services
                 //subject = m.Groups["subject"].Value;
             }
 
-            if (hours <= 0.0f || hours > 168.0f)
-                throw new ApplicationException("Wrong time format must be between 0 and 168");
+            if (hours < 1.0f || hours > 168.0f)
+                throw new ApplicationException("Wrong time format must be between 1 and 168");
 
             //if (string.IsNullOrEmpty(subject))
             //    subject = null;
