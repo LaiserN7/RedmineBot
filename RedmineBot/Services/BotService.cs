@@ -23,7 +23,8 @@ namespace RedmineBot.Services
                 "`/rnd` - create random task\n" +
                 "`/spend <hours?>` - spend hours to any ure task (if no, create it) default is 8\n" +
                 "`/tasks <hours?> - show ure opened tasks where ure can spend (spend only in private chat)\n" +
-                "`/info - show ure short info";
+                "`/info - show ure short info\n" +
+                "`/close - close all opened tasks";
             //"`/menu` - return menu\n" +
             //"/inline   - send inline keyboard\n" +
             //"/keyboard - send custom keyboard\n" +

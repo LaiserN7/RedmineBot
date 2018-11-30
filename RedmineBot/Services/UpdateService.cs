@@ -26,6 +26,7 @@ namespace RedmineBot.Services
         private readonly IOptions<RedmineConfiguration> _redmineConfig;
         private int _telegramUserId;
         private long _chatId;
+        private Stopwatch _stopwatch;
 
         public UpdateService(IBotService botService, IRedmineService redmineService, 
             IOptions<DomainConfiguration> domainConfig, IOptions<RedmineConfiguration> redmineConfig)
@@ -38,6 +39,9 @@ namespace RedmineBot.Services
 
         public Task EchoAsync(Update update)
         {
+            _stopwatch = new Stopwatch();
+            _stopwatch.Start();
+
             return Handling(update);
         }
 
@@ -84,6 +88,8 @@ namespace RedmineBot.Services
                         return GetMyTasks(text);
                     case "/info":
                         return GetMyInfo();
+                    case "/close":
+                        return Close();
                 }
             }
 
@@ -93,42 +99,49 @@ namespace RedmineBot.Services
             return Task.CompletedTask;
         }
 
-        private async Task GetMyInfo()
+        private async Task Close()
         {
-            var stopWatch = new Stopwatch();
-            stopWatch.Start();
-
             var user = await _redmineService.GetCurrentUser();
 
+            var myTasks = await GetOpenedTasks(user.Id);
+
+            foreach (var issue in myTasks.Objects)
+            {
+                issue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
+                issue.UpdatedOn = DateTime.Now;
+                await _redmineService.Update(issue.Id.ToString(), issue);
+            }
+
+            await _botService.SendText(_chatId,
+                $"success closed '{myTasks.TotalCount}'\n" +
+                $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+            return;
+        }
+
+        private Task<PaginatedObjects<Issue>> GetOpenedTasks(int userId)
+        {
             var inWork = new NameValueCollection
             {
                 { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
                 { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
-                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
+                { RedmineKeys.ASSIGNED_TO_ID, userId.ToString() }
             };
-            var myTasks = await _redmineService.GetAll<Issue>(inWork);
+            return _redmineService.GetAll<Issue>(inWork);
+        }
 
-            var filter = new NameValueCollection
-            {
-                { RedmineKeys.SPENT_ON, $"><{DateHelpers.GetFirstDay}|{DateHelpers.GetLastDay()}" },
-                { RedmineKeys.USER_ID, user.Id.ToString() },
-                { RedmineKeys.LIMIT, "100" },
-            };
-            var timeEntrys = await _redmineService.GetAll<TimeEntry>(filter);
+        private async Task GetMyInfo()
+        {
+            var user = await _redmineService.GetCurrentUser();
 
-            var spendedTime = timeEntrys.Objects.Sum(h => h.Hours);
+            var myTasks = await GetOpenedTasks(user.Id);
 
             await _botService.SendText(_chatId,
                 $"Opened tasks in current month: {myTasks.TotalCount}\n" +
-                $"Spended hours in current month: {spendedTime}\n" +
-                $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+                $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
         }
 
         private async Task HandlingCallback(CallbackQuery callback)
         {
-            var stopWatch = new Stopwatch();
-            stopWatch.Start();
-
             _telegramUserId = callback.From.Id;
             _redmineService.Manager = GetManager(); // set manager for user
 
@@ -142,7 +155,7 @@ namespace RedmineBot.Services
             await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: hours, userId: user.Id, projectId: projectId));
             await _botService.SendText(chatId,
                 $"success spend '{hours}' hours to last task, taskId = {issueId}\n" +
-                $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+                $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
             return;
         }
 
@@ -177,15 +190,9 @@ namespace RedmineBot.Services
             (float hours, string subject) = GetTimeAndSubject(text);
 
             var user = await _redmineService.GetCurrentUser();
-            var inWork = new NameValueCollection
-            {
-                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
-                { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
-                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
-            };
-            var myTasks = await _redmineService.GetAll<Issue>(inWork);
-            
-            
+            var myTasks = await GetOpenedTasks(user.Id);
+
+
             if (myTasks.TotalCount != default)
             {
                 var filter = new NameValueCollection
@@ -227,19 +234,11 @@ namespace RedmineBot.Services
 
         private async Task SpendTime(string text)
         {
-            var stopWatch = new Stopwatch();
-            stopWatch.Start();
-
             (float hours, string subject) = GetTimeAndSubject(text);
         
             var user = await _redmineService.GetCurrentUser();
-            var inWork = new NameValueCollection
-            {
-                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
-                { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
-                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
-            };
-            var myTasks = await _redmineService.GetAll<Issue>(inWork);
+            var myTasks = await GetOpenedTasks(user.Id);
+
             if (myTasks.TotalCount != default)
             {
                 var filter = new NameValueCollection
@@ -257,7 +256,7 @@ namespace RedmineBot.Services
                     await _redmineService.Create(Generator.GenerateTimeEntry(issue.Id, hours: (decimal) hours, userId: user.Id, projectId: issue.Project.Id));
                     await _botService.SendText(_chatId, 
                         $"success spend '{hours}' hours to last task, taskId = {issue.Id}\n" +
-                        $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+                        $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
                     return;
                 }
                
@@ -275,7 +274,7 @@ namespace RedmineBot.Services
             await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, hours: (decimal) hours, userId: user.Id));
 
             await _botService.SendText(_chatId, $"success spend '{hours}' hours to new task taskId = {newIssue.Id}\n" +
-                                                $"for {stopWatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+                                                $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
         }
 
         private RedmineManager GetManager()
