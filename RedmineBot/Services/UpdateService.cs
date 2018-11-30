@@ -107,13 +107,13 @@ namespace RedmineBot.Services
 
             foreach (var issue in myTasks.Objects)
             {
-                issue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
+                issue.Status = new IdentifiableName { Id = (int)IssueStatus.Done };
                 issue.UpdatedOn = DateTime.Now;
                 await _redmineService.Update(issue.Id.ToString(), issue);
             }
 
             await _botService.SendText(_chatId,
-                $"success closed '{myTasks.TotalCount}'\n" +
+                $"success closed '{myTasks.TotalCount} tasks'\n" +
                 $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
             return;
         }
