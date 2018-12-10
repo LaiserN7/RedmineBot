@@ -21,8 +21,9 @@ namespace ConsoleForTest
         private static readonly HttpToSocks5Proxy Proxy = new HttpToSocks5Proxy("31.13.224.12", 9999);
         private const string BotToken = "631170979:AAFsyz1LJ17GeDGJ6MfSaEl6P0PJKfO81q0";
         // private const string RedmineApiKey = "c52fce8bc7508b51915f3a0b928d3f506ced9a65";//наиль
-        private const string RedmineApiKey = "e502c3df9e31fb3a4b5b0b522d609a1bb444fa2e";//рустик
+       // private const string RedmineApiKey = "e502c3df9e31fb3a4b5b0b522d609a1bb444fa2e";//рустик
         private const string RedmineHost = "https://rd.d-l-s.ru/";
+        private const string RedmineApiKey = "7d52a4288cc75b4b49b9ebc3dfb917edb70c2249";//алексей 
 
         //private const string login = "nshakirov";
         //private const string pass = "Z!1eZwVm";
@@ -64,16 +65,26 @@ namespace ConsoleForTest
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-          
 
+            var number = 26614;
             var user = await manager.GetCurrentUserAsync();
             var inWork = new NameValueCollection
             {
-                { RedmineKeys.STATUS_ID, $"{IssueStatus.InWork:D}|{IssueStatus.New:D}|{IssueStatus.InWorkToday:D}" },
-                { RedmineKeys.DUE_DATE, DateHelpers.GetLastDay().ToString(DateHelpers.DateFormat) },
-                { RedmineKeys.ASSIGNED_TO_ID, user.Id.ToString() }
+                { RedmineKeys.ISSUE_ID,   number.ToString()},
+                { RedmineKeys.SPENT_ON, "2018-12-10" },
+                { RedmineKeys.LIMIT, "200" }
             };
-            var myTasks = await manager.GetPaginatedObjectsAsync<Issue>(inWork);
+            var myTasks = await manager.GetPaginatedObjectsAsync<TimeEntry>(inWork);
+
+            decimal totalh = 0;
+            foreach (var tas in myTasks.Objects)
+            {
+                await manager.DeleteObjectAsync<TimeEntry>(tas.Id.ToString(), null);
+                totalh += tas.Hours;
+            }
+            Console.WriteLine(totalh);
+
+            Console.WriteLine("s");
             //if (myTasks.TotalCount != 0)
             // {
             //    var filter = new NameValueCollection

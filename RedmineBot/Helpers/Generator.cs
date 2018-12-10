@@ -61,7 +61,7 @@ namespace RedmineBot.Helpers
         {
             return new TimeEntry
             {
-                Activity = new IdentifiableName { Id = (int)Activity.Development },
+                Activity = new IdentifiableName { Id = (int)Activity.Another },
                 CreatedOn = DateTime.Now,
                 Hours = hours,
                 Issue = new IdentifiableName { Id = issueId },

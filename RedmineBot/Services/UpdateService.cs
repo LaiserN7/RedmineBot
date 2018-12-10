@@ -152,6 +152,16 @@ namespace RedmineBot.Services
             if (chatId != callback.From.Id)
                 throw new ApplicationException($"U can spend only in private chat or it's not ure task to userId = {_telegramUserId}");
 
+            var issue = await _redmineService.Get<Issue>(issueId.ToString());
+
+            var timeEntrys = await _redmineService.GetAll<TimeEntry>(new NameValueCollection
+            {
+                { RedmineKeys.ISSUE_ID,   issue.Id.ToString()}
+            });
+
+            if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) 
+                throw new ApplicationException($"U haven't time in issuerId = '{issueId}' for spend '{hours}' for userId={_telegramUserId}");
+
             await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: hours, userId: user.Id, projectId: projectId));
             await _botService.SendText(chatId,
                 $"success spend '{hours}' hours to last task, taskId = {issueId}\n" +

@@ -18,6 +18,7 @@
 
     public enum Activity : byte
     {
-        Development = 9
+        Development = 9,
+        Another = 17
     }
 }
