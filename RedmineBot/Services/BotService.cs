@@ -21,10 +21,11 @@ namespace RedmineBot.Services
                 "`/chatId` - watch id of current chat\n" +
                 "`/userId` - watch id of current user\n" +
                 "`/rnd` - create random task\n" +
-                "`/spend <hours?>` - spend hours to any ure task (if no, create it) default is 8\n" +
-                "`/tasks <hours?> - show ure opened tasks where ure can spend (spend only in private chat)\n" +
+                "`/spend <hours?>` - spend hours to any ure task default is 8\n" +
+                "`/tasks <hours> - show ure opened tasks where ure can spend (spend only in private chat)\n" +
                 "`/info - show ure short info\n" +
-                "`/close - close all opened tasks";
+                "`/close - close all opened tasks" +
+                "`/create <hours> <subject> - create task";
             //"`/menu` - return menu\n" +
             //"/inline   - send inline keyboard\n" +
             //"/keyboard - send custom keyboard\n" +

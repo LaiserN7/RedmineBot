@@ -26,6 +26,7 @@ namespace RedmineBot.Services
         private readonly IOptions<RedmineConfiguration> _redmineConfig;
         private int _telegramUserId;
         private long _chatId;
+        private string _userName;
         private Stopwatch _stopwatch;
 
         public UpdateService(IBotService botService, IRedmineService redmineService, 
@@ -90,6 +91,8 @@ namespace RedmineBot.Services
                         return GetMyInfo();
                     case "/close":
                         return Close();
+                    case "/create":
+                        return Create(text);
                 }
             }
 
@@ -97,6 +100,22 @@ namespace RedmineBot.Services
                 return _botService.SendText(_chatId, "pong");
 
             return Task.CompletedTask;
+        }
+
+        private async Task Create(string text)
+        {
+            var user = await _redmineService.GetCurrentUser();
+            (float hours, string subject) = GetTimeAndSubject(text, true);
+
+            var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: hours, subject: subject));
+
+            //need to update all status to OnWork????
+            newIssue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
+            newIssue.UpdatedOn = DateTime.Now;
+            await _redmineService.Update(newIssue.Id.ToString(), newIssue);
+
+            await _botService.SendText(_chatId, $"success create new Issue {newIssue.Id}\n" +
+                                                $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
         }
 
         private async Task Close()
@@ -160,7 +179,7 @@ namespace RedmineBot.Services
             });
 
             if (issue.EstimatedHours - (float)timeEntrys.Objects.Sum(h => h.Hours) - hours < 0.0f) 
-                throw new ApplicationException($"U haven't time in issuerId = '{issueId}' for spend '{hours}' for userId={_telegramUserId}");
+                throw new ApplicationException($"U haven't time in issuerId = '{issueId}' for spend '{hours}' for userId={_telegramUserId} name={_userName}");
 
             await _redmineService.Create(Generator.GenerateTimeEntry(issueId, hours: hours, userId: user.Id, projectId: projectId));
             await _botService.SendText(chatId,
@@ -184,7 +203,7 @@ namespace RedmineBot.Services
                     return (issueId, hours, projectId, chatId);
                 }
 
-            throw new ApplicationException($"Wrong query callBack = {callBack}");
+            throw new ApplicationException($"Wrong query callBack = {callBack} for name={_userName}");
         }
 
         private Task CreateRandomIssue()
@@ -195,7 +214,7 @@ namespace RedmineBot.Services
         private async Task GetMyTasks(string text)
         {
             if (text.Replace(" ", "") == "/myTasks")
-                throw new ApplicationException("Time not indicated");
+                throw new ApplicationException($"Time not indicated for userId={_telegramUserId} name={_userName}");
 
             (float hours, string subject) = GetTimeAndSubject(text);
 
@@ -271,20 +290,23 @@ namespace RedmineBot.Services
                 }
                
             }
-         
-            var taskHours = hours <= 40.0f ? 40.0f : hours;
 
-            var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: taskHours, subject: subject));
-
-            //need to update all status to OnWork????
-            newIssue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
-            newIssue.UpdatedOn = DateTime.Now;
-            await _redmineService.Update(newIssue.Id.ToString(), newIssue);
-
-            await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, hours: (decimal) hours, userId: user.Id));
-
-            await _botService.SendText(_chatId, $"success spend '{hours}' hours to new task taskId = {newIssue.Id}\n" +
+            await _botService.SendText(_chatId, $"u haven't opened tasks for spend\n" +
                                                 $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
+
+            //var taskHours = hours <= 40.0f ? 40.0f : hours;
+
+            //var newIssue = await _redmineService.Create(Generator.GenerateIssue(user.Id, hours: taskHours, subject: subject));
+
+            ////need to update all status to OnWork????
+            //newIssue.Status = new IdentifiableName { Id = (int)IssueStatus.InWork };
+            //newIssue.UpdatedOn = DateTime.Now;
+            //await _redmineService.Update(newIssue.Id.ToString(), newIssue);
+
+            //await _redmineService.Create(Generator.GenerateTimeEntry(newIssue.Id, hours: (decimal) hours, userId: user.Id));
+
+            //await _botService.SendText(_chatId, $"success spend '{hours}' hours to new task taskId = {newIssue.Id}\n" +
+            //                                    $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
         }
 
         private RedmineManager GetManager()
@@ -292,28 +314,41 @@ namespace RedmineBot.Services
             foreach (var user in _domainConfig.Value.Users)
             {
                 if (user.TelegramUserId != _telegramUserId) continue;
+                _userName = user.Name;
                 return new RedmineManager(_redmineConfig.Value.Host, user.RedmineApiKey);
             }
             
             throw new NotFoundException($"Api key for {nameof(_telegramUserId)} = {_telegramUserId} not found");
         }
 
-        private (float hours, string subject) GetTimeAndSubject(string text)
+        private (float hours, string subject) GetTimeAndSubject(string text, bool isTask = false)
         {
             if (text.Replace(" ", "") == "/spend") return (8.0f, null);
 
             float hours = default;
             string subject = default;
-            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)";
+            const string pattern = @"^(?<type>/\w+)\s(?<hours>\d+)\s?(?<subject>.*)?";
             var m = Regex.Match(text, pattern);
             if (m.Length > 0)
             {
                 float.TryParse(m.Groups["hours"].Value, out hours);
-                //subject = m.Groups["subject"].Value;
+                subject = m.Groups["subject"].Value;
             }
 
-            if (hours < 1.0f || hours > 168.0f)
-                throw new ApplicationException("Wrong time format must be between 1 and 168");
+            
+
+            if (isTask)
+            {
+                if (hours < 8.0f || hours > 168.0f)
+                    throw new ApplicationException($"Wrong time format must be between 8 and 168 for userId={_telegramUserId} name={_userName}");
+                if (string.IsNullOrWhiteSpace(subject))
+                    throw new ApplicationException($"Subject can't be empty for userId={_telegramUserId} name={_userName}");
+            }
+            else
+            {
+                if (hours < 1.0f || hours > 168.0f)
+                    throw new ApplicationException($"Wrong time format must be between 1 and 168 for userId={_telegramUserId} name={_userName}");
+            }
 
             //if (string.IsNullOrEmpty(subject))
             //    subject = null;
