@@ -15,8 +15,6 @@ namespace RedmineBot.Helpers
 
         public static async Task<string> RequestBody(HttpRequest request)
         {
-            //var body = request.Body;
-
             //This line allows us to set the reader for the request back at the beginning of its stream.
             request.EnableRewind();
 
@@ -24,18 +22,14 @@ namespace RedmineBot.Helpers
 
             await request.Body.ReadAsync(buffer, 0, buffer.Length);
 
-            //We convert the byte[] into a string using UTF8 encoding...
             var bodyAsText = Encoding.UTF8.GetString(buffer);
-
-            ////..and finally, assign the read body back to the request body, which is allowed because of EnableRewind()
-            //request.Body = body;
 
             request.Body.Position = 0;
 
             return bodyAsText;
         }
 
-        public static async Task<(long chatId, string less)> GetInfo(HttpRequest request)
+        public static async Task<(long chatId, string message)> GetInfo(HttpRequest request)
         {
             try
             {

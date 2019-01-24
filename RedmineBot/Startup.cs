@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RedmineBot.Helpers;
 using RedmineBot.Middleware;
-using RedmineBot.Services;
 
 namespace RedmineBot
 {
@@ -22,13 +21,8 @@ namespace RedmineBot
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-            services.AddSingleton<IBotClient, BotClient>();
-            services.AddSingleton<IBotService, BotService>();
-            services.AddScoped<IRedmineService, RedmineService>();
-            services.AddScoped<IUpdateService, UpdateService>();
-            services.Configure<BotConfiguration>(Configuration.GetSection(nameof(BotConfiguration)));
-            services.Configure<RedmineConfiguration>(Configuration.GetSection(nameof(RedmineConfiguration)));
-            services.Configure<DomainConfiguration>(Configuration.GetSection(nameof(DomainConfiguration)));
+            services.RegistrationServices();
+            services.RegistrationConfiguration(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
