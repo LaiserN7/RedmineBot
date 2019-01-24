@@ -185,7 +185,6 @@ namespace RedmineBot.Services
             await _botService.SendText(chatId,
                 $"success spend '{hours}' hours to last task, taskId = {issueId}\n" +
                 $"for {_stopwatch.ElapsedMilliseconds} ms by userId = {_telegramUserId}");
-            return;
         }
 
         private (int issueId, int hours, int projectId, int chatId) GetInfoFromCallBack(string callBack)

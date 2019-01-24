@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using RedmineBot.Helpers;
 using RedmineBot.Services;
+using Telegram.Bot.Types;
 
 namespace RedmineBot.Middleware
 {
@@ -22,24 +23,23 @@ namespace RedmineBot.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            (long chatId, string message) = await Request.GetInfo(context.Request);
             try
             {
-                await _next.Invoke(context);
+                await _next(context);
             }
             catch (Exception exception)
             {
-                
-                await OnException(context, exception);
+                await OnException(context, exception, chatId, message);
             }
         }
 
-        private async Task OnException(HttpContext context, Exception exception)
+        private async Task OnException(HttpContext context, Exception exception, long chatId, string message)
         {
-            //(long chatId, string message) = await Request.GetInfo(context);
-            var chatId = /*chatId != 0 ? chatId :*/ /*_config.Value.DefaultChatId;*/ 449279856;
-            var message =/* message + Environment.NewLine +*/ exception.ToString();
+            if (chatId != 0 && chatId != _config.Value.DefaultChatId)
+                await _botService.SendText(chatId, exception.Message);
 
-            await _botService.SendText(chatId, message);
+            await _botService.SendText(_config.Value.DefaultChatId, $"{message} /n {exception.Message}");
         }
     }
 }

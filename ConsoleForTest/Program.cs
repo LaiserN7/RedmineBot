@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
@@ -40,17 +41,19 @@ namespace ConsoleForTest
 
         static async Task Main(string[] args)
         {
-            
-            //userId - 65 - Саша
-            try
-            {
-                await Write();
 
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
+            //userId - 65 - Саша
+            //try
+            //{
+            //    await Write();
+
+            //}
+            //catch (Exception e)
+            //{
+            //    Console.WriteLine(e.Message);
+            //}
+
+            ConcurrentDictionary<int, int> cd = new ConcurrentDictionary<int, int>();
 
             Console.WriteLine("Lool");
 
@@ -66,18 +69,23 @@ namespace ConsoleForTest
             stopWatch.Start();
 
 
-            var number = 26614;
+            var number = 26739;
             var user = await manager.GetCurrentUserAsync();
+
+
+
             var inWork = new NameValueCollection
             {
                 { RedmineKeys.ISSUE_ID,   number.ToString()},
-                { RedmineKeys.SPENT_ON, "2018-12-10" },
+                { RedmineKeys.USER_ID, user.Id.ToString() },
+                { RedmineKeys.SPENT_ON, "2019-01-09" },
                 { RedmineKeys.LIMIT, "200" }
             };
-            var myTasks = await manager.GetPaginatedObjectsAsync<TimeEntry>(inWork);
+
+            var myTasks = await manager.GetObjectsAsync<TimeEntry>(inWork);
 
             decimal totalh = 0;
-            foreach (var tas in myTasks.Objects)
+            foreach (var tas in myTasks)
             {
                 await manager.DeleteObjectAsync<TimeEntry>(tas.Id.ToString(), null);
                 totalh += tas.Hours;
