@@ -30,16 +30,16 @@ namespace RedmineBot.Middleware
             }
             catch (Exception exception)
             {
-                await OnException(context, exception, chatId, message);
+                await OnException(exception, chatId, message);
             }
         }
 
-        private async Task OnException(HttpContext context, Exception exception, long chatId, string message)
+        private async Task OnException(Exception exception, long chatId, string message)
         {
             if (chatId != 0 && chatId != _config.Value.DefaultChatId)
                 await _botService.SendText(chatId, exception.Message);
 
-            await _botService.SendText(_config.Value.DefaultChatId, $"{message} /n {exception.Message}");
+            await _botService.SendText(_config.Value.DefaultChatId, $"{message} \n {exception}");
         }
     }
 }

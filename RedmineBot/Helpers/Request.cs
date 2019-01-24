@@ -47,7 +47,7 @@ namespace RedmineBot.Helpers
 
                 return update.Type != UpdateType.Message 
                     ? (default, info) 
-                    : (update.Message.Chat.Id, $"{info} \n {update.Message.Text}");
+                    : (update.Message.Chat.Id, $"{info} \n message: {update.Message.Text}");
             }
             catch (Exception exception)
             {
