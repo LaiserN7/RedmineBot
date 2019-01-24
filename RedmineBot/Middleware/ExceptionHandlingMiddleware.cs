@@ -26,7 +26,7 @@ namespace RedmineBot.Middleware
             (long chatId, string message) = await Request.GetInfo(context.Request);
             try
             {
-                await _next(context);
+                await _next.Invoke(context);
             }
             catch (Exception exception)
             {
