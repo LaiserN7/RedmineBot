@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Options;
 using RedmineBot.Helpers;
 using RedmineBot.Services;
@@ -23,6 +24,8 @@ namespace RedmineBot.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+            //This line allows us to set the reader for the request back at the beginning of its stream.
+            context.Request.EnableRewind();
             (long chatId, string message) = await Request.GetInfo(context.Request);
             try
             {

@@ -17,8 +17,7 @@ namespace RedmineBot.Helpers
         {
             var body = request.Body;
 
-            //This line allows us to set the reader for the request back at the beginning of its stream.
-            request.EnableRewind();
+            
 
             var buffer = new byte[Convert.ToInt32(request.ContentLength)];
 
@@ -47,7 +46,7 @@ namespace RedmineBot.Helpers
 
                 return update.Type != UpdateType.Message 
                     ? (default, info) 
-                    : (update.Message.Chat.Id, $"{info} \n ////text from user message: {update.Message.Text}///");
+                    : (update.Message.Chat.Id, $"{info} \n\n user text: `{update.Message.Text}` \n");
             }
             catch (Exception exception)
             {
