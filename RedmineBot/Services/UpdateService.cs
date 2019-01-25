@@ -56,7 +56,7 @@ namespace RedmineBot.Services
                     return HandlingCallback(update.CallbackQuery);
             }
 
-            return Task.CompletedTask;
+            throw new ApplicationException($"Type '{update.Type}' not support");
         }
 
         private Task HandlingMessage(Message message)
@@ -99,7 +99,7 @@ namespace RedmineBot.Services
             if (Regex.IsMatch(text, @"^ping", RegexOptions.IgnoreCase))
                 return _botService.SendText(_chatId, "pong");
 
-            return Task.CompletedTask;
+            throw new ApplicationException($"Command '{text}' not support");
         }
 
         private async Task Create(string text)
